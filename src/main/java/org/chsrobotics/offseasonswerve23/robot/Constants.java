@@ -33,6 +33,6 @@ public final class Constants {
 
     public static final GearRatioHelper GEAR_RATIO_HELPER = new GearRatioHelper(1, 1);
 
-    public static final double WHEEL_RADIUS = 1.0;
+    public static final double WHEEL_RADIUS_CENTIMETERS = 1.0;
   }
 }

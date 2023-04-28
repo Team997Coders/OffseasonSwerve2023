@@ -1,13 +1,18 @@
 package org.chsrobotics.offseasonswerve23.robot.subsystems;
 
+import javax.swing.text.Highlighter.Highlight;
+
+import org.chsrobotics.lib.telemetry.HighLevelLogger;
+import org.chsrobotics.lib.telemetry.Logger;
 import org.chsrobotics.offseasonswerve23.robot.Constants;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 
-public class Drivetrain {
+public class Drivetrain implements Subsystem{
     private final CANSparkMax frontRightDriveSparkMax = new CANSparkMax(Constants.Drivetrain.FRONT_RIGHT_DRIVE_CANID, MotorType.kBrushless);
     private final CANSparkMax frontRightSteerSparkMax = new CANSparkMax(Constants.Drivetrain.FRONT_RIGHT_STEER_CANID, MotorType.kBrushless);
 
@@ -21,6 +26,22 @@ public class Drivetrain {
     private final CANSparkMax backLeftSteerSparkMax = new CANSparkMax(Constants.Drivetrain.BACK_LEFT_STEER_CANID, MotorType.kBrushless);
 
 
+    private final String subdirString = "Drivetrain";
+
+
+    private final Logger<Double> frontRightDriveVelocityMPSLogger = new Logger<>("frontRightDriveVelocityMPS", subdirString);
+    private final Logger<Double> frontRightSteerVelocityRPSLogger = new Logger<>("frontRightSteerVelocityRPS", subdirString);
+
+    private final Logger<Double> frontLeftDriveVelocityMPSLogger = new Logger<>("frontLeftDriveVelocityMPS", subdirString);
+    private final Logger<Double> frontLeftSteerVelocityRPSLogger = new Logger<>("frontLeftSteerVelocityRPS", subdirString);
+
+    private final Logger<Double> backRightDriveVelocityMPSLogger = new Logger<>("backRightDriveVelocityMPS", subdirString);
+    private final Logger<Double> backRightSteerVelocityRPSLogger = new Logger<>("backRightSteerVelocityRPS", subdirString);
+
+    private final Logger<Double> backLeftDriveVelocityMPSLogger = new Logger<>("backLeftDriveVelocityMPS", subdirString);
+    private final Logger<Double> backLeftSteerVelocityRPSLogger = new Logger<>("backLeftSteerVelocityRPS", subdirString);
+
+//set voltage 
     public void setFrontRightDriveVoltage(double volts) {
         frontRightDriveSparkMax.setVoltage(0);
     }
@@ -52,16 +73,18 @@ public class Drivetrain {
         backLeftSteerSparkMax.setVoltage(0);
     }
 
+
+//get velocity
     public double getFrontRightDriveVelocityMetersPerSecond() {
-        return frontRightDriveSparkMax.getEncoder().getVelocity();
+        return frontRightDriveSparkMax.getEncoder().getVelocity()*60*2*Math.PI*(Constants.Drivetrain.WHEEL_RADIUS_CENTIMETERS/100);
     }
     public double getFrontRightSteerVelocityRadPerSec() {
         return Units.rotationsPerMinuteToRadiansPerSecond(frontRightSteerSparkMax.getEncoder().getVelocity());
     }
 
 
-    public double getFrontLefttDriveVelocityMetersPerSecond() {
-        return frontLeftDriveSparkMax.getEncoder().getVelocity();
+    public double getFrontLeftDriveVelocityMetersPerSecond() {
+        return frontLeftDriveSparkMax.getEncoder().getVelocity()*60*2*Math.PI*(Constants.Drivetrain.WHEEL_RADIUS_CENTIMETERS/100);
     }
     public double getFrontLeftSteerVelocityRadPerSec() {
         return Units.rotationsPerMinuteToRadiansPerSecond(frontLeftSteerSparkMax.getEncoder().getVelocity());
@@ -69,7 +92,7 @@ public class Drivetrain {
 
 
     public double getBackRightDriveVelocityMetersPerSecond() {
-        return backRightDriveSparkMax.getEncoder().getVelocity();
+        return backRightDriveSparkMax.getEncoder().getVelocity()*60*2*Math.PI*(Constants.Drivetrain.WHEEL_RADIUS_CENTIMETERS/100);
     }
     public double getBackRightSteerVelocityRadPerSec() {
         return Units.rotationsPerMinuteToRadiansPerSecond(backRightSteerSparkMax.getEncoder().getVelocity());
@@ -77,9 +100,26 @@ public class Drivetrain {
 
 
     public double getBackLeftDriveVelocityMetersPerSecond() {
-        return backLeftDriveSparkMax.getEncoder().getVelocity();
+        return backLeftDriveSparkMax.getEncoder().getVelocity()*60*2*Math.PI*(Constants.Drivetrain.WHEEL_RADIUS_CENTIMETERS/100);
     }
     public double getBackLeftSteerVelocityRadPerSec() {
         return Units.rotationsPerMinuteToRadiansPerSecond(backLeftSteerSparkMax.getEncoder().getVelocity());
+    }
+
+
+    
+    @Override
+    public void periodic() {
+        frontRightDriveVelocityMPSLogger.update(getFrontRightDriveVelocityMetersPerSecond());
+        frontRightSteerVelocityRPSLogger.update(getFrontRightSteerVelocityRadPerSec());
+
+        frontLeftDriveVelocityMPSLogger.update(getFrontLeftDriveVelocityMetersPerSecond());
+        frontLeftSteerVelocityRPSLogger.update(getFrontLeftSteerVelocityRadPerSec());
+
+        backRightDriveVelocityMPSLogger.update(getBackRightDriveVelocityMetersPerSecond());
+        backRightSteerVelocityRPSLogger.update(getBackRightSteerVelocityRadPerSec());
+
+        backLeftDriveVelocityMPSLogger.update(getBackLeftDriveVelocityMetersPerSecond());
+        backLeftSteerVelocityRPSLogger.update(getBackLeftSteerVelocityRadPerSec());
     }
 }
