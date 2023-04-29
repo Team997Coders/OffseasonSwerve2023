@@ -31,8 +31,9 @@ public final class Constants {
     public static final int BACK_LEFT_DRIVE_CANID = 0;
     public static final int BACK_LEFT_STEER_CANID = 0;
 
-    public static final GearRatioHelper GEAR_RATIO_HELPER = new GearRatioHelper(1, 1);
+    public static final GearRatioHelper ENCODER_WHEEL_GEAR_RATIO = new GearRatioHelper(1, 1);
 
     public static final double WHEEL_RADIUS_CENTIMETERS = 1.0;
+    
   }
 }
