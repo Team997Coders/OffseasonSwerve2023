@@ -7,7 +7,6 @@ import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Peripherals{
     private AHRS imu;
