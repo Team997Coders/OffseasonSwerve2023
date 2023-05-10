@@ -6,6 +6,7 @@ import org.chsrobotics.offseasonswerve23.robot.Constants;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.SparkMaxAbsoluteEncoder.Type;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -41,7 +42,7 @@ public class Drivetrain implements Subsystem{
 
 //set voltage 
 
-    //front right get voltage
+    //front right set voltage
     public void setFrontRightDriveVoltage(double volts) {
         frontRightDriveSparkMax.setVoltage(volts);
     }
@@ -49,7 +50,7 @@ public class Drivetrain implements Subsystem{
         frontRightSteerSparkMax.setVoltage(volts);
     }
 
-    //front left get voltage
+    //front left set voltage
     public void setFrontLefttDriveVoltage(double volts) {
         frontLeftDriveSparkMax.setVoltage(volts);
     }
@@ -57,7 +58,7 @@ public class Drivetrain implements Subsystem{
         frontLeftSteerSparkMax.setVoltage(volts);
     }
 
-    //back right get voltage 
+    //back right set voltage 
     public void setBackRightDriveVoltage(double volts) {
         backRightDriveSparkMax.setVoltage(volts);
     }
@@ -65,7 +66,7 @@ public class Drivetrain implements Subsystem{
         backRightSteerSparkMax.setVoltage(volts);
     }
 
-    //back left get voltage
+    //back left set voltage
     public void setBackLeftDriveVoltage(double volts) {
         backLeftDriveSparkMax.setVoltage(volts);
     }
@@ -109,7 +110,24 @@ public class Drivetrain implements Subsystem{
         return Units.rotationsPerMinuteToRadiansPerSecond(backLeftSteerSparkMax.getEncoder().getVelocity());
     }
 
+    
+//get steer angles
 
+    //get right steer angles
+    public double getFrontRightSteerAngleRadians() {
+        return Units.rotationsToRadians(frontRightSteerSparkMax.getAbsoluteEncoder(Type.kDutyCycle).getPosition());
+    }
+    public double getBackRightSteerAngleRadians() {
+        return Units.rotationsToRadians(backRightSteerSparkMax.getAbsoluteEncoder(Type.kDutyCycle).getPosition());
+    }
+
+    //get left steer angles
+    public double getFrontLeftSteerAngleRadians() {
+        return Units.rotationsToDegrees(frontLeftSteerSparkMax.getAbsoluteEncoder(Type.kDutyCycle).getPosition());
+    }
+    public double getBackLeftSteerAngleRadians() {
+        return Units.rotationsToDegrees(backLeftSteerSparkMax.getAbsoluteEncoder(Type.kDutyCycle).getPosition());
+    }
     
     @Override
     public void periodic() {
