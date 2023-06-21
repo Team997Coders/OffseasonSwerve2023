@@ -4,7 +4,11 @@
 
 package org.chsrobotics.offseasonswerve23.robot;
 
+import org.chsrobotics.lib.controllers.feedback.PID;
+import org.chsrobotics.lib.controllers.feedback.PID.PIDConstants;
 import org.chsrobotics.lib.util.GearRatioHelper;
+
+import edu.wpi.first.math.geometry.Translation2d;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -35,5 +39,13 @@ public final class Constants {
 
     public static final double WHEEL_RADIUS_CENTIMETERS = 1.0;
     
+  }
+  
+  public final class InverseKinematics {
+    public static Translation2d WHEELS_DISTANCE_FROM_CENTER = new Translation2d();
+  }
+  public final class ModuleControllers {
+    public static PIDConstants steerPIDConstants = new PIDConstants(0, 0, 0 );
+    public static PIDConstants drivePIDConstants = new PIDConstants(0, 0, 0);
   }
 }

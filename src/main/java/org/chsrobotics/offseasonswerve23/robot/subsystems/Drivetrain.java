@@ -51,7 +51,7 @@ public class Drivetrain implements Subsystem{
     }
 
     //front left set voltage
-    public void setFrontLefttDriveVoltage(double volts) {
+    public void setFrontLeftDriveVoltage(double volts) {
         frontLeftDriveSparkMax.setVoltage(volts);
     }
     public void setFrontLeftSteerVoltage(double volts) {
@@ -128,6 +128,7 @@ public class Drivetrain implements Subsystem{
     public double getBackLeftSteerAngleRadians() {
         return Units.rotationsToDegrees(backLeftSteerSparkMax.getAbsoluteEncoder(Type.kDutyCycle).getPosition());
     }
+
     
     @Override
     public void periodic() {

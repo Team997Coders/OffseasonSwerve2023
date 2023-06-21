@@ -4,13 +4,28 @@
 
 package org.chsrobotics.offseasonswerve23.robot.subsystems;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
+import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ExampleSubsystem extends SubsystemBase {
+  private final CANSparkMax testModuleDrive = new CANSparkMax(0, MotorType.kBrushless);
+  private final CANSparkMax testModuleSteer = new CANSparkMax(0, MotorType.kBrushless);
+
   /** Creates a new ExampleSubsystem. */
   public ExampleSubsystem() {}
 
+  
+  public void setDriveVoltage(double voltage) {
+    testModuleDrive.setVoltage(voltage);
+  }
+
+  public void setSteerVoltage(double voltage) {
+    testModuleSteer.setVoltage(voltage);
+  }
   /**
    * Example command factory method.
    *
