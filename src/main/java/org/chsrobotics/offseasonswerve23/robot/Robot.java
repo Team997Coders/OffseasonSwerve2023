@@ -5,8 +5,8 @@
 package org.chsrobotics.offseasonswerve23.robot;
 
 import org.chsrobotics.lib.telemetry.HighLevelLogger;
-import org.chsrobotics.offseasonswerve23.robot.commands.ModuleControllers;
-import org.chsrobotics.offseasonswerve23.robot.commands.ModuleControllers.ModuleSetpoints;
+import org.chsrobotics.offseasonswerve23.robot.commands.swerve.ModuleTurnProfiling;
+import org.chsrobotics.offseasonswerve23.robot.commands.swerve.ModuleTurnProfiling.ModuleProfiledSetpoints;
 import org.chsrobotics.offseasonswerve23.robot.subsystems.swerve.Swerve;
 
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -50,9 +50,9 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     CommandScheduler.getInstance()
-        .schedule(new ModuleControllers(swerve, new ModuleSetpoints(() -> 0, () -> 0),
-            new ModuleSetpoints(() -> 0, () -> 2), new ModuleSetpoints(() -> 0, () -> 2),
-            new ModuleSetpoints(() -> 0, () -> 2)));
+        .schedule(new ModuleTurnProfiling(swerve, new ModuleProfiledSetpoints(() -> 0, () -> 1),
+            new ModuleProfiledSetpoints(() -> 0, () -> 1), new ModuleProfiledSetpoints(() -> 0, () -> 1),
+            new ModuleProfiledSetpoints(() -> 0, () -> 1)));
   }
 
   @Override

@@ -4,8 +4,9 @@
 
 package org.chsrobotics.offseasonswerve23.robot;
 
+import org.chsrobotics.lib.trajectory.motionProfile.TrapezoidProfile.Constraints;
 import org.chsrobotics.lib.util.GearRatioHelper;
-import org.chsrobotics.offseasonswerve23.robot.commands.ModuleControllers.ModuleControllerGains;
+import org.chsrobotics.offseasonswerve23.robot.commands.swerve.ModuleControllers.ModuleControllerGains;
 import org.chsrobotics.offseasonswerve23.robot.subsystems.swerve.SwerveHardware.SwerveModuleHardwareConstants;
 
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -76,7 +77,7 @@ public final class Constants {
     public static final boolean DRIVE_DEFAULT_BRAKE = false;
   }
 
-  public final class ModuleControllers {
+  public static final class ModuleControllers {
     public static final ModuleControllerGains FRONT_LEFT_GAINS = new ModuleControllerGains(1, 0, 0, 0.1, 1, 0, 1, 0, 0, 0.1,
         1, 0);
 
@@ -88,5 +89,10 @@ public final class Constants {
 
     public static final ModuleControllerGains BACK_LEFT_GAINS = new ModuleControllerGains(1, 0, 0, 0.1, 1, 0, 1, 0, 0, 0.1,
         1, 0);
+  }
+
+  public static final class ModuleTurnProfiling {
+    public static final Constraints STEER_PROFILE_CONSTRAINTS = new Constraints(20, 50);
+    // rad/s, rad/s^2
   }
 }

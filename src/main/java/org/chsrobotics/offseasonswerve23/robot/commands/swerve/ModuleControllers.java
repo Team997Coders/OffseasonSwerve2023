@@ -1,4 +1,4 @@
-package org.chsrobotics.offseasonswerve23.robot.commands;
+package org.chsrobotics.offseasonswerve23.robot.commands.swerve;
 
 import java.util.function.DoubleSupplier;
 
@@ -14,7 +14,8 @@ import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 
 public class ModuleControllers extends CommandBase {
-    public record ModuleSetpoints(DoubleSupplier steerSetpointRadiansPerSecond, DoubleSupplier driveSetpointRadiansPerSecond) {
+    public record ModuleVelocitySetpoints(DoubleSupplier steerSetpointRadiansPerSecond,
+            DoubleSupplier driveSetpointRadiansPerSecond) {
     };
 
     public record ModuleControllerGains(double steerKP, double steerKI, double steerKD, double steerKA, double steerKV,
@@ -24,27 +25,32 @@ public class ModuleControllers extends CommandBase {
 
     private final Swerve swerve;
 
-    private final ModuleSetpoints frontLeft;
-    private final ModuleSetpoints frontRight;
-    private final ModuleSetpoints backRight;
-    private final ModuleSetpoints backLeft;
+    private final ModuleVelocitySetpoints frontLeft;
+    private final ModuleVelocitySetpoints frontRight;
+    private final ModuleVelocitySetpoints backRight;
+    private final ModuleVelocitySetpoints backLeft;
 
-    private final ModuleControllerUnit frontLeftControllers = new ModuleControllerUnit(Constants.ModuleControllers.FRONT_LEFT_GAINS);
+    private final ModuleControllerUnit frontLeftControllers = new ModuleControllerUnit(
+            Constants.ModuleControllers.FRONT_LEFT_GAINS);
 
-    private final ModuleControllerUnit frontRightControllers = new ModuleControllerUnit(Constants.ModuleControllers.FRONT_RIGHT_GAINS);
+    private final ModuleControllerUnit frontRightControllers = new ModuleControllerUnit(
+            Constants.ModuleControllers.FRONT_RIGHT_GAINS);
 
-    private final ModuleControllerUnit backRightControllers = new ModuleControllerUnit(Constants.ModuleControllers.BACK_RIGHT_GAINS);
+    private final ModuleControllerUnit backRightControllers = new ModuleControllerUnit(
+            Constants.ModuleControllers.BACK_RIGHT_GAINS);
 
-    private final ModuleControllerUnit backLeftControllers = new ModuleControllerUnit(Constants.ModuleControllers.BACK_LEFT_GAINS);
+    private final ModuleControllerUnit backLeftControllers = new ModuleControllerUnit(
+            Constants.ModuleControllers.BACK_LEFT_GAINS);
 
     private final DeltaTimeUtil dtUtil;
 
-    public ModuleControllers(Swerve swerve, ModuleSetpoints frontLeft, ModuleSetpoints frontRight, ModuleSetpoints backRight,
-            ModuleSetpoints backLeft) {
+    public ModuleControllers(Swerve swerve, ModuleVelocitySetpoints frontLeft, ModuleVelocitySetpoints frontRight,
+            ModuleVelocitySetpoints backRight,
+            ModuleVelocitySetpoints backLeft) {
 
         addRequirements(swerve);
         this.swerve = swerve;
-        
+
         this.frontLeft = frontLeft;
         this.frontRight = frontRight;
         this.backRight = backRight;
@@ -73,16 +79,18 @@ public class ModuleControllers extends CommandBase {
             steerFeedforward = new SimpleMotorFeedforward(gains.steerKS, gains.steerKV, gains.steerKA);
 
             driveFeedback = new PID(gains.driveKP, gains.driveKI, gains.driveKD, 0);
-            
+
             driveFeedforward = new SimpleMotorFeedforward(gains.driveKS, gains.driveKV, gains.driveKA);
         }
 
         double steerCalculate(double setpointRadiansPerSecond, double currentVelocity, double dt) {
-            return steerFeedback.calculate(setpointRadiansPerSecond, dt) + steerFeedforward.calculate(currentVelocity, setpointRadiansPerSecond, dt);
+            return steerFeedback.calculate(setpointRadiansPerSecond, dt)
+                    + steerFeedforward.calculate(currentVelocity, setpointRadiansPerSecond, dt);
         }
 
         double driveCalculate(double setpointRadiansPerSecond, double currentVelocity, double dt) {
-            return driveFeedback.calculate(setpointRadiansPerSecond, dt) + driveFeedforward.calculate(currentVelocity, setpointRadiansPerSecond, dt);
+            return driveFeedback.calculate(setpointRadiansPerSecond, dt)
+                    + driveFeedforward.calculate(currentVelocity, setpointRadiansPerSecond, dt);
         }
 
         @Override
@@ -116,16 +124,20 @@ public class ModuleControllers extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        for (SwerveModuleIO moduleIO: new SwerveModuleIO[] {swerve.getFrontLeft(), swerve.getFrontRight(), swerve.getBackRight(), swerve.getBackLeft()}) {
-        moduleIO.setSteerControlInput(0);
-        moduleIO.setDriveControlInput(0);
+        for (SwerveModuleIO moduleIO : new SwerveModuleIO[] { swerve.getFrontLeft(), swerve.getFrontRight(),
+                swerve.getBackRight(), swerve.getBackLeft() }) {
+            moduleIO.setSteerControlInput(0);
+            moduleIO.setDriveControlInput(0);
         }
     }
 
-    private void setControlInputs(SwerveModuleIO module, ModuleSetpoints setpoints, ModuleControllerUnit controllers, double dt) {
-        double steerInput = controllers.steerCalculate(setpoints.steerSetpointRadiansPerSecond.getAsDouble(), module.getSteerVelocityRadiansPerSecond(), dt);
+    private void setControlInputs(SwerveModuleIO module, ModuleVelocitySetpoints setpoints,
+            ModuleControllerUnit controllers, double dt) {
+        double steerInput = controllers.steerCalculate(setpoints.steerSetpointRadiansPerSecond.getAsDouble(),
+                module.getSteerVelocityRadiansPerSecond(), dt);
 
-        double driveInput = controllers.driveCalculate(setpoints.driveSetpointRadiansPerSecond.getAsDouble(), module.getDriveVelocityRadiansPerSecond(), dt);
+        double driveInput = controllers.driveCalculate(setpoints.driveSetpointRadiansPerSecond.getAsDouble(),
+                module.getDriveVelocityRadiansPerSecond(), dt);
 
         module.setSteerControlInput(steerInput);
         module.setDriveControlInput(driveInput);
