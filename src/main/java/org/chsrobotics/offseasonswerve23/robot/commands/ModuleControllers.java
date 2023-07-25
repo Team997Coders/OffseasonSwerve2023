@@ -3,73 +3,131 @@ package org.chsrobotics.offseasonswerve23.robot.commands;
 import java.util.function.DoubleSupplier;
 
 import org.chsrobotics.lib.controllers.feedback.PID;
+import org.chsrobotics.lib.telemetry.IntrinsicLoggable;
+import org.chsrobotics.lib.util.DeltaTimeUtil;
 import org.chsrobotics.offseasonswerve23.robot.Constants;
-import org.chsrobotics.offseasonswerve23.robot.subsystems.Drivetrain;
+import org.chsrobotics.offseasonswerve23.robot.subsystems.swerve.Swerve;
+import org.chsrobotics.offseasonswerve23.robot.subsystems.swerve.Swerve.SwerveModuleIO;
 
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 
-public class ModuleControllers extends CommandBase{
-    private  Drivetrain drivetrain = new Drivetrain();
+public class ModuleControllers extends CommandBase {
+    public record ModuleSetpoints(DoubleSupplier steerSetpointRadiansPerSecond, DoubleSupplier driveSetpointRadiansPerSecond) {
+    };
 
-    private final DoubleSupplier frontRightSteerSupplier;
-    private final DoubleSupplier frontRightDriveSupplier;
-    private final DoubleSupplier frontLeftSteerSupplier;
-    private final DoubleSupplier frontLeftDriveSupplier;
-    private final DoubleSupplier backRightSteerSupplier;
-    private final DoubleSupplier backRightDriveSupplier;
-    private final DoubleSupplier backLeftSteerSupplier;
-    private final DoubleSupplier backLeftDriveSupplier;
-    private final PID frontRightSteerPID = new PID(Constants.ModuleControllers.steerPIDConstants, 0, true);
-    private final PID frontRightDrivePID = new PID(Constants.ModuleControllers.drivePIDConstants, 0, false);
-    private final PID frontLeftSteerPID = new PID(Constants.ModuleControllers.steerPIDConstants, 0, true);
-    private final PID frontLeftDrivePID = new PID(Constants.ModuleControllers.drivePIDConstants, 0, false);
-    private final PID backRightSteerPID = new PID(Constants.ModuleControllers.steerPIDConstants, 0, true);
-    private final PID backRightDrivePID = new PID(Constants.ModuleControllers.drivePIDConstants, 0, false);
-    private final PID backLeftSteerPID = new PID(Constants.ModuleControllers.steerPIDConstants, 0, true);
-    private final PID backLeftDrivePID = new PID(Constants.ModuleControllers.drivePIDConstants, 0, false);
+    public record ModuleControllerGains(double steerKP, double steerKI, double steerKD, double steerKA, double steerKV,
+            double steerKS, double driveKP, double driveKI, double driveKD, double driveKA, double driveKV,
+            double driveKS) {
+    }
 
-    public ModuleControllers(DoubleSupplier frontRightSteerSupplier, DoubleSupplier frontRightDriveSupplier,DoubleSupplier frontLeftSteerSupplier,DoubleSupplier frontLeftDriveSupplier,DoubleSupplier backRightSteerSupplier,DoubleSupplier backRightDriveSupplier,DoubleSupplier backLeftSteerSupplier,DoubleSupplier backLeftDriveSupplier) {
-        this.frontRightSteerSupplier = frontRightSteerSupplier;
-        this.frontRightDriveSupplier = frontRightDriveSupplier;
-        this.frontLeftSteerSupplier = frontLeftSteerSupplier;
-        this.frontLeftDriveSupplier = frontLeftDriveSupplier;
-        this.backRightSteerSupplier = backRightSteerSupplier;
-        this.backRightDriveSupplier = backRightDriveSupplier;
-        this.backLeftSteerSupplier = backLeftSteerSupplier;
-        this.backLeftDriveSupplier = backLeftDriveSupplier;
+    private final Swerve swerve;
+
+    private final ModuleSetpoints frontLeft;
+    private final ModuleSetpoints frontRight;
+    private final ModuleSetpoints backRight;
+    private final ModuleSetpoints backLeft;
+
+    private final ModuleControllerUnit frontLeftControllers = new ModuleControllerUnit(Constants.ModuleControllers.FRONT_LEFT_GAINS);
+
+    private final ModuleControllerUnit frontRightControllers = new ModuleControllerUnit(Constants.ModuleControllers.FRONT_RIGHT_GAINS);
+
+    private final ModuleControllerUnit backRightControllers = new ModuleControllerUnit(Constants.ModuleControllers.BACK_RIGHT_GAINS);
+
+    private final ModuleControllerUnit backLeftControllers = new ModuleControllerUnit(Constants.ModuleControllers.BACK_LEFT_GAINS);
+
+    private final DeltaTimeUtil dtUtil;
+
+    public ModuleControllers(Swerve swerve, ModuleSetpoints frontLeft, ModuleSetpoints frontRight, ModuleSetpoints backRight,
+            ModuleSetpoints backLeft) {
+
+        addRequirements(swerve);
+        this.swerve = swerve;
         
+        this.frontLeft = frontLeft;
+        this.frontRight = frontRight;
+        this.backRight = backRight;
+        this.backLeft = backLeft;
+
+        String subdirName = "moduleControllers";
+
+        frontLeftControllers.autoGenerateLogs("frontLeft", subdirName);
+        frontRightControllers.autoGenerateLogs("frontRight", subdirName);
+        backRightControllers.autoGenerateLogs("backRight", subdirName);
+        backLeftControllers.autoGenerateLogs("backLeft", subdirName);
+
+        dtUtil = new DeltaTimeUtil();
+    }
+
+    private class ModuleControllerUnit implements IntrinsicLoggable {
+        private final PID steerFeedback;
+        private final SimpleMotorFeedforward steerFeedforward;
+
+        private final PID driveFeedback;
+        private final SimpleMotorFeedforward driveFeedforward;
+
+        ModuleControllerUnit(ModuleControllerGains gains) {
+            steerFeedback = new PID(gains.steerKP, gains.steerKI, gains.steerKD, 0);
+
+            steerFeedforward = new SimpleMotorFeedforward(gains.steerKS, gains.steerKV, gains.steerKA);
+
+            driveFeedback = new PID(gains.driveKP, gains.driveKI, gains.driveKD, 0);
+            
+            driveFeedforward = new SimpleMotorFeedforward(gains.driveKS, gains.driveKV, gains.driveKA);
+        }
+
+        double steerCalculate(double setpointRadiansPerSecond, double currentVelocity, double dt) {
+            return steerFeedback.calculate(setpointRadiansPerSecond, dt) + steerFeedforward.calculate(currentVelocity, setpointRadiansPerSecond, dt);
+        }
+
+        double driveCalculate(double setpointRadiansPerSecond, double currentVelocity, double dt) {
+            return driveFeedback.calculate(setpointRadiansPerSecond, dt) + driveFeedforward.calculate(currentVelocity, setpointRadiansPerSecond, dt);
+        }
+
+        @Override
+        public void autoGenerateLogs(DataLog log, String name, String subdirName, boolean publishToNT,
+                boolean recordInLog) {
+            steerFeedback.autoGenerateLogs(log, name + "/steerFeedback", subdirName, publishToNT, recordInLog);
+            driveFeedback.autoGenerateLogs(log, name + "/driveFeedback", subdirName, publishToNT, recordInLog);
+        }
+
+        @Override
+        public void updateLogs() {
+            steerFeedback.updateLogs();
+            driveFeedback.updateLogs();
+        }
     }
 
     @Override
     public void execute() {
-        frontRightDrivePID.setSetpoint(frontRightDriveSupplier.getAsDouble());
-        frontRightSteerPID.setSetpoint(frontRightSteerSupplier.getAsDouble());
+        double dt = dtUtil.getTimeSecondsSinceLastCall();
 
-        frontLeftDrivePID.setSetpoint(frontLeftDriveSupplier.getAsDouble());
-        frontLeftSteerPID.setSetpoint(frontLeftSteerSupplier.getAsDouble());
+        setControlInputs(swerve.getFrontLeft(), frontLeft, frontLeftControllers, dt);
+        setControlInputs(swerve.getFrontRight(), frontRight, frontRightControllers, dt);
+        setControlInputs(swerve.getBackRight(), backRight, backRightControllers, dt);
+        setControlInputs(swerve.getBackLeft(), backLeft, backLeftControllers, dt);
 
-        backRightDrivePID.setSetpoint(backRightDriveSupplier.getAsDouble());
-        backRightSteerPID.setSetpoint(backRightSteerSupplier.getAsDouble());
-
-        backLeftDrivePID.setSetpoint(backLeftDriveSupplier.getAsDouble());
-        backLeftSteerPID.setSetpoint(backLeftSteerSupplier.getAsDouble());
-
-        drivetrain.setFrontRightDriveVoltage(frontRightDrivePID.calculate(drivetrain.getFrontRightDriveVelocityMetersPerSec()));
-        drivetrain.setFrontRightSteerVoltage(frontRightSteerPID.calculate(drivetrain.getFrontRightSteerAngleRadians()));
-
-        drivetrain.setFrontLeftDriveVoltage(frontLeftDrivePID.calculate(drivetrain.getFrontLeftDriveVelocityMetersPerSec()));
-        drivetrain.setFrontLeftSteerVoltage(frontLeftSteerPID.calculate(drivetrain.getFrontLeftSteerAngleRadians()));
-
-        drivetrain.setBackRightDriveVoltage(backRightDrivePID.calculate(drivetrain.getBackRightDriveVelocityMetersPerSec()));
-        drivetrain.setBackRightSteerVoltage(backRightSteerPID.calculate(drivetrain.getBackRightSteerAngleRadians()));
-
-        drivetrain.setBackLeftDriveVoltage(backLeftDrivePID.calculate(drivetrain.getBackLeftDriveVelocityMetersPerSec()));
-        drivetrain.setBackLeftSteerVoltage(backLeftSteerPID.calculate(drivetrain.getBackLeftSteerAngleRadians()));
-
-        
-
+        frontLeftControllers.updateLogs();
+        frontRightControllers.updateLogs();
+        backRightControllers.updateLogs();
+        backLeftControllers.updateLogs();
     }
 
-    
-    
+    @Override
+    public void end(boolean interrupted) {
+        for (SwerveModuleIO moduleIO: new SwerveModuleIO[] {swerve.getFrontLeft(), swerve.getFrontRight(), swerve.getBackRight(), swerve.getBackLeft()}) {
+        moduleIO.setSteerControlInput(0);
+        moduleIO.setDriveControlInput(0);
+        }
+    }
+
+    private void setControlInputs(SwerveModuleIO module, ModuleSetpoints setpoints, ModuleControllerUnit controllers, double dt) {
+        double steerInput = controllers.steerCalculate(setpoints.steerSetpointRadiansPerSecond.getAsDouble(), module.getSteerVelocityRadiansPerSecond(), dt);
+
+        double driveInput = controllers.driveCalculate(setpoints.driveSetpointRadiansPerSecond.getAsDouble(), module.getDriveVelocityRadiansPerSecond(), dt);
+
+        module.setSteerControlInput(steerInput);
+        module.setDriveControlInput(driveInput);
+    }
 }
